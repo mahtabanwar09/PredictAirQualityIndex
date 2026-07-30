@@ -57,21 +57,6 @@
             </div>
           </div>
 
-          <hr class="my-4">
-
-          <div class="mb-4">
-            <label class="form-label d-block">Prediction Model</label>
-            <div class="btn-group model-toggle" role="group">
-              <input type="radio" class="btn-check" name="model_choice" id="model_ml" value="ml" checked>
-              <label class="btn btn-outline-primary" for="model_ml">ML Regression</label>
-
-              <input type="radio" class="btn-check" name="model_choice" id="model_ann" value="ann" {% if not ann_available %}disabled{% endif %}>
-              <label class="btn btn-outline-primary" for="model_ann">
-                ANN {% if not ann_available %}(not trained yet){% endif %}
-              </label>
-            </div>
-          </div>
-
           <button type="submit" class="btn btn-outline-secondary w-100">Predict AQI</button>
         </form>
       </div>

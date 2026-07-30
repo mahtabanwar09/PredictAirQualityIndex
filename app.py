@@ -16,7 +16,6 @@ Then open http://127.0.0.1:5000
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request
 
@@ -33,8 +32,6 @@ app = Flask(__name__)
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_PATH = BASE_DIR / "models" / "aqi_model.pkl"
 SCALER_PATH = BASE_DIR / "models" / "aqi_scaler.pkl"
-ANN_MODEL_PATH = BASE_DIR / "models" / "aqi_ann.h5"
-ANN_SCALER_PATH = BASE_DIR / "models" / "ann_scaler.pkl"
 
 # --- Load the regression model + scaler (required) ---------------------
 ml_model = None
@@ -49,37 +46,15 @@ if MODEL_PATH.exists() and SCALER_PATH.exists():
 else:
     ml_load_error = "No trained model found. Run train_model.py first."
 
-# --- Load the ANN model + scaler (optional, only if trained) ------------
-ann_model = None
-ann_scaler = None
-ann_load_error = None
-if ANN_MODEL_PATH.exists() and ANN_SCALER_PATH.exists():
-    try:
-        import tensorflow as tf
-
-        ann_model = tf.keras.models.load_model(ANN_MODEL_PATH, compile=False)
-        ann_scaler = joblib.load(ANN_SCALER_PATH)
-    except ImportError:
-        ann_load_error = "TensorFlow is not installed, so the ANN model is unavailable."
-    except Exception as exc:
-        ann_load_error = f"Could not load ANN model files: {exc}"
-        ann_model = None
-        ann_scaler = None
-
-
-def run_prediction(input_values, model_choice="ml"):
+def run_prediction(input_values):
     X = pd.DataFrame([input_values], columns=FEATURE_COLUMNS)
 
-    if model_choice == "ann" and ann_model is not None and ann_scaler is not None:
-        X_scaled = ann_scaler.transform(X)
-        prediction = float(ann_model.predict(X_scaled, verbose=0).flatten()[0])
-        model_used = "Artificial Neural Network (ANN)"
-    else:
-        if ml_model is None or ml_scaler is None:
-            raise RuntimeError(ml_load_error or "No trained model is available.")
-        X_scaled = ml_scaler.transform(X)
-        prediction = float(ml_model.predict(X_scaled)[0])
-        model_used = "Machine Learning Regression"
+    if ml_model is None or ml_scaler is None:
+        raise RuntimeError(ml_load_error or "No trained model is available.")
+
+    X_scaled = ml_scaler.transform(X)
+    prediction = float(ml_model.predict(X_scaled)[0])
+    model_used = "Machine Learning Regression"
 
     prediction = max(0, round(prediction))
     category, advice = get_aqi_category(prediction)
@@ -113,9 +88,7 @@ def visualizations():
 @app.route("/predict", methods=["GET", "POST"])
 def predict():
     if request.method == "GET":
-        return render_template(
-            "predict.html", ann_available=ann_model is not None
-        )
+        return render_template("predict.html")
 
     # --- POST: read form inputs ---
     try:
@@ -123,16 +96,14 @@ def predict():
     except (KeyError, ValueError):
         return render_template(
             "predict.html",
-            ann_available=ann_model is not None,
             error="Please fill in all fields with valid numbers.",
         )
 
     try:
-        result = run_prediction(input_values, request.form.get("model_choice", "ml"))
+        result = run_prediction(input_values)
     except RuntimeError as exc:
         return render_template(
             "predict.html",
-            ann_available=ann_model is not None,
             error=str(exc),
         )
 
@@ -278,25 +249,13 @@ def _render_streamlit_predict(st):
             )
             input_values.append(float(value))
 
-        model_choice = "ml"
-        if ann_model is not None:
-            selected_model = st.radio(
-                "Prediction model",
-                ["Machine Learning Regression", "Artificial Neural Network (ANN)"],
-                horizontal=True,
-            )
-            if selected_model.startswith("Artificial"):
-                model_choice = "ann"
-        elif ann_load_error:
-            st.caption("ANN model is unavailable in this deployment.")
-
         submitted = st.form_submit_button("Predict AQI", type="primary")
 
     if not submitted:
         return
 
     try:
-        result = run_prediction(input_values, model_choice)
+        result = run_prediction(input_values)
     except RuntimeError as exc:
         st.error(str(exc))
         return

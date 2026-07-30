@@ -35,14 +35,6 @@ MODEL_PATH = MODEL_DIR / "aqi_model.pkl"
 SCALER_PATH = MODEL_DIR / "aqi_scaler.pkl"
 META_PATH = MODEL_DIR / "model_metrics.pkl"
 
-try:
-    from xgboost import XGBRegressor
-
-    HAS_XGB = True
-except ImportError:
-    HAS_XGB = False
-
-
 def load_and_prepare_data():
     df = pd.read_csv(DATA_PATH)
     df = clean_dataframe(df)
@@ -58,7 +50,7 @@ def load_and_prepare_data():
 
 
 def build_models():
-    models = {
+    return {
         "Linear Regression": LinearRegression(),
         "Decision Tree": DecisionTreeRegressor(max_depth=10, random_state=42),
         "Random Forest": RandomForestRegressor(
@@ -67,11 +59,6 @@ def build_models():
         "Gradient Boosting": GradientBoostingRegressor(random_state=42),
         "SVR": SVR(kernel="rbf", C=50, epsilon=1.0),
     }
-    if HAS_XGB:
-        models["XGBoost"] = XGBRegressor(
-            n_estimators=300, max_depth=6, learning_rate=0.08, random_state=42
-        )
-    return models
 
 
 def evaluate(model, X_test, y_test):
