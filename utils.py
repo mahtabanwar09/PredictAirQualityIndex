@@ -34,11 +34,12 @@ AQI_CATEGORIES = [
 
 def get_aqi_category(aqi_value: float):
     """Return (category, health_advice) for a given AQI value."""
-    aqi_value = max(0, min(500, aqi_value))
+    # Clamp the value to a non-negative number
+    aqi_value = max(0, aqi_value)
     for upper_bound, category, advice in AQI_CATEGORIES:
         if aqi_value <= upper_bound:
             return category, advice
-    return AQI_CATEGORIES[-1][1], AQI_CATEGORIES[-1][2]
+    return AQI_CATEGORIES[-1][1], AQI_CATEGORIES[-1][2]  # For values > 500
 
 
 def clean_dataframe(df):

@@ -9,6 +9,7 @@ Run:
     python train_model.py
 """
 
+from pathlib import Path
 import warnings
 
 import joblib
@@ -26,10 +27,13 @@ from utils import FEATURE_COLUMNS, TARGET_COLUMN, clean_dataframe
 
 warnings.filterwarnings("ignore")
 
-DATA_PATH = "dataset/air_quality.csv"
-MODEL_PATH = "models/aqi_model.pkl"
-SCALER_PATH = "models/aqi_scaler.pkl"
-META_PATH = "models/model_metrics.pkl"
+BASE_DIR = Path(__file__).resolve().parent
+DATA_PATH = BASE_DIR / "dataset" / "air_quality.csv"
+MODEL_DIR = BASE_DIR / "models"
+MODEL_DIR.mkdir(exist_ok=True)  # Ensure the models directory exists
+MODEL_PATH = MODEL_DIR / "aqi_model.pkl"
+SCALER_PATH = MODEL_DIR / "aqi_scaler.pkl"
+META_PATH = MODEL_DIR / "model_metrics.pkl"
 
 try:
     from xgboost import XGBRegressor

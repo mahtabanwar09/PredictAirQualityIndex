@@ -10,6 +10,7 @@ Run:
 Requires: tensorflow (pip install tensorflow)
 """
 
+from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
@@ -21,9 +22,12 @@ from tensorflow.keras import layers, models
 
 from utils import FEATURE_COLUMNS, TARGET_COLUMN, clean_dataframe
 
-DATA_PATH = "dataset/air_quality.csv"
-ANN_MODEL_PATH = "models/aqi_ann.h5"
-ANN_SCALER_PATH = "models/ann_scaler.pkl"
+BASE_DIR = Path(__file__).resolve().parent
+DATA_PATH = BASE_DIR / "dataset" / "air_quality.csv"
+MODEL_DIR = BASE_DIR / "models"
+MODEL_DIR.mkdir(exist_ok=True)  # Ensure the models directory exists
+ANN_MODEL_PATH = MODEL_DIR / "aqi_ann.h5"
+ANN_SCALER_PATH = MODEL_DIR / "ann_scaler.pkl"
 
 tf.random.set_seed(42)
 np.random.seed(42)
