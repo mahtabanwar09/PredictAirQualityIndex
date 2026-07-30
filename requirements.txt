@@ -1,6 +1,9 @@
+Python 3.11.9
 Flask
 gunicorn
 numpy
 pandas
 scikit-learn
 joblib
+xgboost
+tensorflow
