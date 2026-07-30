@@ -1,8 +1,7 @@
 Flask
 gunicorn
+streamlit
 numpy
 pandas
 scikit-learn
 joblib
-xgboost
-tensorflow

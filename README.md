@@ -1,29 +1,34 @@
 # Air Quality Index (AQI) Prediction System
 
-A web app that predicts AQI from pollutant and weather readings using both a
-classical ML regression model and an ANN (TensorFlow/Keras), then shows the
-AQI category and a health recommendation.
+A web app that predicts AQI from pollutant and weather readings using a
+classical ML regression model, then shows the AQI category and a health
+recommendation. An ANN model can also be trained locally with the optional
+TensorFlow dependencies.
 
 ## Project Structure
 
-```
+```text
 AQI_Project/
-├── dataset/
-│   ├── generate_dataset.py   # creates a synthetic air_quality.csv (swap in real data later)
-│   └── air_quality.csv
-├── models/
-│   ├── aqi_model.pkl         # best regression model (auto-selected)
-│   ├── aqi_scaler.pkl
-│   ├── model_metrics.pkl     # comparison metrics for all trained models
-│   ├── aqi_ann.h5            # ANN model (after running ann_model.py)
-│   └── ann_scaler.pkl
-├── static/css/style.css
-├── templates/                # index, predict, result, about
-├── utils.py                  # shared feature list + AQI category logic
-├── train_model.py            # trains & compares 5-6 regression models
-├── ann_model.py               # trains the ANN
-├── app.py                    # Flask app
-└── requirements.txt
+|-- dataset/
+|   |-- generate_dataset.py
+|   `-- air_quality.csv
+|-- datasets/
+|   `-- *_AQIBulletins.csv
+|-- models/
+|   |-- aqi_model.pkl
+|   |-- aqi_scaler.pkl
+|   |-- model_metrics.pkl
+|   |-- aqi_ann.h5
+|   `-- ann_scaler.pkl
+|-- static/css/style.css
+|-- templates/
+|-- utils.py
+|-- visualization_data.py
+|-- train_model.py
+|-- ann_model.py
+|-- app.py
+|-- requirements.txt
+`-- requirements-training.txt
 ```
 
 ## Setup
@@ -34,53 +39,74 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## 1. Get a dataset
+For local ANN training or XGBoost experiments, install the optional training
+dependencies too:
+
+```bash
+pip install -r requirements-training.txt
+```
+
+## 1. Get A Dataset
 
 A synthetic dataset is already generated at `dataset/air_quality.csv` so you
 can run the whole pipeline immediately. To use real data, replace that file
-with a real dataset (e.g. an India Air Quality / UCI AQI dataset) that has
-these exact column names:
+with a dataset that has these exact column names:
 
-```
+```text
 PM2.5, PM10, NO2, SO2, CO, O3, NH3, Temperature, Humidity, WindSpeed, AQI
 ```
 
-(Or re-run `python dataset/generate_dataset.py` to regenerate the synthetic one.)
+You can also re-run `python dataset/generate_dataset.py` to regenerate the
+synthetic dataset.
 
-## 2. Train the models
+## 2. Train The Models
 
 ```bash
-python train_model.py     # trains & compares Linear/Tree/RF/GB/SVR/XGBoost, saves the best
-python ann_model.py       # trains the TensorFlow ANN (requires tensorflow installed)
+python train_model.py
+python ann_model.py
 ```
 
-Both scripts read `dataset/air_quality.csv` and write to `models/`. The Flask
-app works with just `train_model.py`'s output — the ANN is optional; if
-`models/aqi_ann.h5` doesn't exist, the "ANN" option on the predict page is
-simply disabled.
+Both scripts read `dataset/air_quality.csv` and write to `models/`. The app
+works with just `train_model.py` output. The ANN is optional; if TensorFlow is
+not installed or the ANN files cannot be loaded, the ANN option is disabled.
 
-## 3. Run the app
+## 3. Run The App
+
+Streamlit:
+
+```bash
+streamlit run app.py
+```
+
+Flask:
 
 ```bash
 python app.py
 ```
 
-Visit `http://127.0.0.1:5000`.
+Visit `http://127.0.0.1:5000` for the Flask version.
 
-## Notes on the included synthetic dataset
+## Notes On The Included Synthetic Dataset
 
-`dataset/generate_dataset.py` builds a realistic but **synthetic** dataset
-(8,000 rows, with some missing values and duplicates injected on purpose) so
-every part of the pipeline — cleaning, EDA, training, saving — has real work
-to do out of the box. It is **not real air-quality data**; for a genuine
-project, swap in an actual dataset with matching column names before your
-final training run.
+`dataset/generate_dataset.py` builds a realistic but synthetic dataset with
+8,000 rows, missing values, and duplicate rows so cleaning, EDA, training, and
+saving have real work to do out of the box. It is not real air-quality data;
+for a final project, swap in an actual dataset with matching column names
+before your final training run.
 
 ## Deployment
 
-The app is a standard Flask app (`gunicorn app:app` works for Render/Railway).
-Make sure `models/aqi_model.pkl` and `models/aqi_scaler.pkl` (and optionally
-`models/aqi_ann.h5` / `models/ann_scaler.pkl`) are trained and present before
-deploying — train them locally and commit them, or run the training scripts
-as part of your build step.
-"# PredictAirQualityIndex" 
+`app.py` supports both Streamlit Community Cloud and Flask hosting.
+
+For Streamlit Community Cloud, use `app.py` as the entry point and install
+`requirements.txt`. TensorFlow is intentionally excluded from the hosted
+runtime dependencies because the ANN is optional and TensorFlow wheels may not
+be available for the newest Python versions used by the platform.
+
+For Render/Railway-style Flask hosting, the included `Procfile` still works:
+`gunicorn app:app`.
+
+Make sure `models/aqi_model.pkl` and `models/aqi_scaler.pkl` are trained and
+present before deploying. The ANN files are optional; if TensorFlow is not
+installed, the app disables the ANN option and keeps the regression model
+available.
