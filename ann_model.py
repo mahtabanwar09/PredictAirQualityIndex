@@ -18,9 +18,8 @@ import tensorflow as tf
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from tensorflow.keras import layers, models
 
-from utils import FEATURE_COLUMNS, TARGET_COLUMN, clean_dataframe
+from utils import FEATURE_COLUMNS, TARGET_COLUMN, build_ann, clean_dataframe
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / "dataset" / "air_quality.csv"
@@ -31,22 +30,6 @@ ANN_SCALER_PATH = MODEL_DIR / "ann_scaler.pkl"
 
 tf.random.set_seed(42)
 np.random.seed(42)
-
-
-def build_ann(input_dim: int) -> tf.keras.Model:
-    model = models.Sequential(
-        [
-            layers.Input(shape=(input_dim,)),
-            layers.Dense(128, activation="relu"),
-            layers.Dropout(0.3),
-            layers.Dense(64, activation="relu"),
-            layers.Dropout(0.2),
-            layers.Dense(32, activation="relu"),
-            layers.Dense(1, activation="linear"),  # regression output
-        ]
-    )
-    model.compile(optimizer="adam", loss="mse", metrics=["mae"])
-    return model
 
 
 def main():
@@ -65,7 +48,7 @@ def main():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    model = build_ann(input_dim=X_train_scaled.shape[1])
+    model = build_ann(input_dim=X_train_scaled.shape[1], compile_model=True)
     model.summary()
 
     early_stop = tf.keras.callbacks.EarlyStopping(
@@ -88,9 +71,9 @@ def main():
     r2 = r2_score(y_test, preds)
     print(f"\nANN Test MAE: {mae:.2f}  R2: {r2:.4f}")
 
-    model.save(ANN_MODEL_PATH)
+    model.save_weights(ANN_MODEL_PATH)
     joblib.dump(scaler, ANN_SCALER_PATH)
-    print(f"\nSaved ANN model to {ANN_MODEL_PATH}")
+    print(f"\nSaved ANN model weights to {ANN_MODEL_PATH}")
     print(f"Saved ANN scaler to {ANN_SCALER_PATH}")
 
 
